@@ -32,7 +32,7 @@ use Config::IniFiles;
 #use Net::OpenSSH;
 #use Text::CSV::Encoded;
 #use IO::String;
-use Log;
+use Provisioning::Log;
 
 require Exporter;
 

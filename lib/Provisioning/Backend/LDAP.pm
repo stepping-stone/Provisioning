@@ -112,11 +112,11 @@ Modifies one attribute in a given entry. The input parameters are: entry, attrib
 
 our @ISA = qw(Exporter);
 
-our %EXPORT_TAGS = ( 'all' => [ qw(getParentEntry ldap modifyAttribute connectToBackendServer simpleSearch getValue disconnectFromServer startPersistantSearch) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(exportEntryToFile getParentEntry ldap modifyAttribute connectToBackendServer simpleSearch getValue disconnectFromServer startPersistantSearch) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-our @EXPORT = qw(getParentEntry modifyAttribute connectToBackendServer simpleSearch getValue disconnectFromServer startPersistantSearch);
+our @EXPORT = qw(exportEntryToFile getParentEntry modifyAttribute connectToBackendServer simpleSearch getValue disconnectFromServer startPersistantSearch);
 
 our $VERSION = '0.01';
 
@@ -193,6 +193,35 @@ sub getParentEntry
     return $parents[0];
 }
 
+
+sub exportEntryToFile
+{
+
+    my ( $entry, $ldif ) = @_;
+
+    # Create a new ldif object in write mode and the
+    my $new_ldif = Net::LDAP::LDIF->new( $ldif, "w" );
+
+    # Write the content from the entry to the ldif
+    $new_ldif->write_entry( $entry );
+
+    # Chek if there was an error
+    my $error = $new_ldif->error();
+
+    # Terminate the process (close FH etc.)
+    $new_ldif->done();
+
+    # If there was an error log it and return
+    if ( $error )
+    {
+        logger("error","Cannot write entry to ldif: $error");
+        return 1;
+    }
+
+    return 0;
+
+
+}
 
 sub connectToBackendServer{
 

@@ -54,14 +54,14 @@ sub sendMail{
   my $mail_subject;
 
   # get the environment for the mail header and the hostname for the message
-  my $server=$Provisioning::cfg->val("Global","ENVIRONMENT");
-  my $hostname=`hostname`;
+  my $server = $Provisioning::cfg->val("Global","ENVIRONMENT");
+  my $hostname = `hostname`;
 
   # remove the newline from hostname
   chomp($hostname);
 
   # get all vars stored in the config file. 
-  my $mailcfg=$Provisioning::global_cfg;
+  my $mailcfg = $Provisioning::global_cfg;
 
   unless($mailcfg){
     logger("warning","No mailconfig defined, will not send any mail!");

@@ -32,6 +32,7 @@ use Provisioning::Log;
 use Provisioning::Information;
 use Module::Load;
 use Net::LDAP;
+use Net::LDAP::LDIF;
 use Net::LDAP::Constant qw(
   LDAP_SYNC_REFRESH_AND_PERSIST
   LDAP_SUCCESS

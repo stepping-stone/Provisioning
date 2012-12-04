@@ -46,6 +46,7 @@ use Net::LDAP::Constant qw(
 use Switch;
 use Net::LDAP::Control::SyncRequest;
 use POSIX;
+use File::Basename;
 
 require Exporter;
 
@@ -203,11 +204,25 @@ sub exportEntryToFile
     # Create a new ldif object in write mode and the
     my $new_ldif = Net::LDAP::LDIF->new( $ldif, "w" );
 
+    # Check for errors
+    if ( ! $new_ldif )
+    {
+        logger("error","Cannot create ldif $ldif");
+        return 1;
+    }
+
+    my $error = $new_ldif->error();
+    if ( $error )
+    {
+        logger("error","Cannot open ldif $ldif: $error");
+        return 1;
+    }
+
     # Write the content from the entry to the ldif
     $new_ldif->write_entry( $entry );
 
     # Chek if there was an error
-    my $error = $new_ldif->error();
+    $error = $new_ldif->error();
 
     # Terminate the process (close FH etc.)
     $new_ldif->done();
@@ -725,6 +740,64 @@ sub persistantSearchCallback{
                                 $had_error = 0;
 
                             } # End case retain
+
+             case "delete"  {
+                                logger("info","Starting delete process for ".
+                                       $param2->dn() );
+                                # Start the process by calling the processEntry
+                                # method
+                                $had_error = processEntry($param2,"delete");
+                                
+                                # Test if the entry has been processed or not,
+                                # if not -1 is returned and we can ignore this
+                                # entry
+                                return if ( $had_error == -1 );
+
+                                if( $had_error == 0 )
+                                {
+                                    logger("info","Successfully deleted ".
+                                           $param2->dn());
+                                } else 
+                                {
+                                    logger("error","Could not delete ".
+                                           $param2->dn()." without errors, ".
+                                           "return code: $had_error" );
+                                }
+
+                                # We always want to write sstProvisioningState
+                                # that's why we set had_error to 0
+                                $had_error = 0;
+
+                            } # End case delete
+
+             case "restore" {
+                                logger("info","Starting delete restore for ".
+                                       $param2->dn() );
+                                # Start the process by calling the processEntry
+                                # method
+                                $had_error = processEntry($param2,"restore");
+                                
+                                # Test if the entry has been processed or not,
+                                # if not -1 is returned and we can ignore this
+                                # entry
+                                return if ( $had_error == -1 );
+
+                                if( $had_error == 0 )
+                                {
+                                    logger("info","Successfully restored ".
+                                           $param2->dn());
+                                } else 
+                                {
+                                    logger("error","Could not restore ".
+                                           $param2->dn()." without errors, ".
+                                           "return code: $had_error" );
+                                }
+
+                                # We always want to write sstProvisioningState
+                                # that's why we set had_error to 0
+                                $had_error = 0;
+
+                            } # End case restore
 
              else { # This is the default case if nothing above matched
                     # No changes made in the LDAP so set update cookie to 0 (we

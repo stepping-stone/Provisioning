@@ -771,7 +771,7 @@ sub persistantSearchCallback{
                             } # End case delete
 
              case "restore" {
-                                logger("info","Starting delete restore for ".
+                                logger("info","Starting restore process for ".
                                        $param2->dn() );
                                 # Start the process by calling the processEntry
                                 # method
@@ -798,6 +798,35 @@ sub persistantSearchCallback{
                                 $had_error = 0;
 
                             } # End case restore
+
+             case "unretain"{
+                                logger("info","Starting unretain process for ".
+                                       $param2->dn() );
+                                # Start the process by calling the processEntry
+                                # method
+                                $had_error = processEntry($param2,"unretain");
+                                
+                                # Test if the entry has been processed or not,
+                                # if not -1 is returned and we can ignore this
+                                # entry
+                                return if ( $had_error == -1 );
+
+                                if( $had_error == 0 )
+                                {
+                                    logger("info","Successfully unretained ".
+                                           $param2->dn());
+                                } else 
+                                {
+                                    logger("error","Could not unretain ".
+                                           $param2->dn()." without errors, ".
+                                           "return code: $had_error" );
+                                }
+
+                                # We always want to write sstProvisioningState
+                                # that's why we set had_error to 0
+                                $had_error = 0;
+
+                            } # End case unretain
 
              else { # This is the default case if nothing above matched
                     # No changes made in the LDAP so set update cookie to 0 (we

@@ -30,6 +30,8 @@ use Config::IniFiles;
 use strict;
 use warnings;
 
+use Provisioning::Log;
+
 use POSIX; #LC_TIME setlocale
 require Exporter;
 
@@ -78,6 +80,17 @@ sub sendMail{
   my $want_info_mail=$mailcfg->val('Mail','WANTINFOMAIL');
 
   my $to=$mailcfg->val('Mail','SENDTO');
+
+  # Test if we have all information to send the mail
+  if ( !$host || !$port || !$username || !$password || !$to || !$from_adress )
+  {
+    # Log that we don't have enough information and return
+    logger("warning","Should send a mail with the message: $message. But cannot"
+          ." send the mail because it is not fully configure. To enable this "
+          ."fauture please configure the section [Mail] in "
+          ."/etc/Provisioning/Global.conf");
+    return;
+  }
   
   # if we want to send a mail whatever facility we have we need to set this 
   # var to TRUE

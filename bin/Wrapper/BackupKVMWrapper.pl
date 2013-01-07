@@ -119,6 +119,8 @@ our $opt_R = $opts{'dryrun'};
 load "Provisioning::Log", ":all";
 load "Provisioning::Backup::KVM", ':all';
 load "Provisioning::Backend::$backend", ":all";
+load "Provisioning::Backup::KVM::KVMBackup",':all';
+load "Provisioning::TransportAPI::$TransportAPI",':all';
 
 # Nice look and feel in debug mode
 print "\n\n" if ( $debug );
@@ -308,12 +310,71 @@ sub backupMachines
             next;
         }
 
-        # TODO check if iteration should be deleted
+        checkIterations($machine);
 
         logger("debug","Machine $machine processed");
 
     }
 
+}
+
+################################################################################
+# checkIterations
+################################################################################
+# Description:
+#  
+################################################################################
+sub checkIterations
+{
+    my $machine = shift;
+
+    my @iterations;
+
+    # Get the backup directory for the machine
+    my $backup_directory = getValue($machine, "sstBackupRootDirectory");
+
+    # Remove the file:// in front
+    $backup_directory =~ s/file\:\/\///;
+
+    # Add the intermediate path and the machine name
+    $backup_directory .= "/".returnIntermediatePath()."/$machine";
+
+    # Go through the hole directory and put all iterations in the iterations 
+    # array
+    while(<$backup_directory/*>)
+    {
+        push( @iterations, basename( $_ ) );
+    }
+
+    # As long as we have more iterations as we should have, delete the oldest:
+    while ( @iterations > getValue( $machine, "SSTBACKUPNUMBEROFITERATIONS") )
+    {
+        my $oldest = "90000101000000";
+        my $oldest_index = 0;
+        my $index;
+
+        foreach my $iteration (@iterations)
+        {
+            print "$iteration\n";
+            if ( $iteration < $oldest )
+            {
+                $oldest = $iteration;
+                $oldest_index = $index;
+            } else
+            {
+                $index++;
+            }
+            
+        }
+
+        # Delete it from the array: 
+        splice @iterations, $oldest_index, 1;
+
+        # And delete on filesystem: 
+        my @args = ( "rm", "-rf", $backup_directory."/".$oldest);
+        executeCommand( undef, @args );
+
+    }
 
 
 }

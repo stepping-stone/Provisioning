@@ -248,17 +248,67 @@ sub backupMachines
 {
     my @machines = @_;
 
-    # Go through all machines in the list passed
+    # Check hash if machine could successfully be snapshotted
+    my %snapshot_success = ();
+
+    # Go through all machines in the list passed and execute the snapshot method
     foreach my $machine ( @machines ) 
     {
         # Log which machine we are processing
-        logger("debug","Processing machine $machine");
+        logger("debug","Snapshotting machine $machine");
 
-        processEntry($machine,"snapshot");
+        # At start error is 0 for every machine 
+        my $error = 0;
 
-        processEntry($machine,"merge");
+        $error = processEntry($machine,"snapshot");
 
-        processEntry($machine,"retain");
+        # Test if there was an error
+        if ( $error )
+        {
+            logger("error","Snapshot process returned error code: $error"
+                  ." Will not call merge and retain processes for machine "
+                  ."$machine.");
+            $snapshot_success{$machine} = "no";
+            next;
+        }
+
+        $snapshot_success{$machine} = "yes";
+        logger("debug","Machine $machine successfully snapshotted");
+
+    } # End of for each
+
+    # After all machines have been snapshotted, we can merge and retain them
+    foreach my $machine ( @machines )
+    {
+        
+        # Check if the snapshot for this machine was successfull
+        next if $snapshot_success{$machine} eq "no";
+
+        logger("debug","Processing (merge and retain) machine $machine");
+
+        # Do the merge and retain
+        $error = processEntry($machine,"merge");
+
+        # Test if there was an error
+        if ( $error )
+        {
+            logger("error","Merge process returned error code: $error"
+                  ." Will not call retain processes for machine "
+                  ."$machine.");
+            next;
+        }
+
+        $error = processEntry($machine,"retain");
+
+        # Test if there was an error
+        if ( $error )
+        {
+            logger("error","Retain process returned error code: $error"
+                  ." No files have beed transfered to the backup location");
+            next;
+        }
+
+        # TODO check if iteration should be deleted
 
         logger("debug","Machine $machine processed");
 

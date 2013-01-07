@@ -168,7 +168,7 @@ unless($opt_c){
 } # end unless(opt_c)
 
 # get all the vars stored in the config file 
-our $cfg=new Config::IniFiles( -file => $opt_c );
+our $cfg = new Config::IniFiles( -file => $opt_c );
 
 our $location=dirname(abs_path($0));
 
@@ -239,7 +239,7 @@ load "$server_module", ':all';
 
 unless($lock->trylock("/var/run/Provisioning-$service-$type")){
 
-  logger("warning","$service-Deamon already running, program exits now");
+  logger("warning","$service-Deamon already running (file /var/run/Provisioning-$service-$type already locked), program exits now");
   gatewayDisconnect($gateway_connection);
   exit;
 

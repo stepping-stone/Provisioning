@@ -85,10 +85,10 @@ sub sendMail{
   if ( !$host || !$port || !$username || !$password || !$to || !$from_adress )
   {
     # Log that we don't have enough information and return
-    logger("warning","Should send a mail with the message: $message. But cannot"
+    logger("warning","Should send a mail with the message: '$message'. But cannot"
           ." send the mail because it is not fully configure. To enable this "
           ."fauture please configure the section [Mail] in "
-          ."/etc/Provisioning/Global.conf");
+          .$mailcfg->GetFileName());
     return;
   }
   

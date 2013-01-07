@@ -1016,7 +1016,7 @@ sub persistantSearchCallback{
 } # end sub persitantSearchCallback
 
 
-sub exitSearch(){
+sub exitSearch{
 
   # We have do stop the persistant search due to an error
 

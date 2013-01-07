@@ -44,7 +44,7 @@ our $VERSION = '0.01';
 # load the nessecary modules
 load "Provisioning::Information", ':all';
 
-my $service=$Provisioning::syslog_name;
+my $service = $Provisioning::syslog_name;
 
 sub logger{
 

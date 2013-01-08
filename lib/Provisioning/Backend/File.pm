@@ -289,28 +289,21 @@ sub simpleSearch
     # All results
     my @results = ();
 
-    # Check if the section subtree (which is the name of the machine) exists
+    # Check if the section subtree exists
     foreach my $section ( $information_file->Sections() )
     {
-        # Do we find the value in this section? 
-        my $found = 0;
-
-        # Get all values for the attribute in this section
-        my @values = $information_file->val( $section, $attribute );
-        
-        # Go through all values and check if $value is present
-        foreach my $current_value ( @values )
+        # Get the dn for the sections
+        if ( ( getValue( $section, "dn" ) eq $subtree ) || ( $section eq $subtree ) )
         {
-            if ( $value eq $current_value )
+            # We are in the correct section, now get the attribute we are
+            # looking for, if the value also matches, we can put this section
+            # into the results
+            if ( getValue( $section, $attribute ) eq $value )
             {
-                # If yes remember that we found it and quit the loop
-                $found = 1; 
-                last;
+                push( @results, $section );
             }
         }
 
-        # If we found the value, we can return this section
-        push ( @results, $section) if $found;
     }
 
     return @results;

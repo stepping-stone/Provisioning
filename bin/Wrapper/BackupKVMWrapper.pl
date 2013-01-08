@@ -269,7 +269,7 @@ sub backupMachines
         {
             logger("error","Snapshot process returned error code: $error"
                   ." Will not call merge and retain processes for machine "
-                  ."$machine.");
+                  ."$machine.") if $error != -1;
             $snapshot_success{$machine} = "no";
             next;
         }
@@ -349,13 +349,17 @@ sub checkIterations
     # As long as we have more iterations as we should have, delete the oldest:
     while ( @iterations > getValue( $machine, "SSTBACKUPNUMBEROFITERATIONS") )
     {
+        # Set the oldest date to year 9000 to make sure that whatever date will
+        # follow is older
         my $oldest = "90000101000000";
         my $oldest_index = 0;
         my $index;
 
+        # Go through all iterations an check if the current iteration is older 
+        # than the current oldest one. If yes, set the current iteration as the
+        # oldest iteration.
         foreach my $iteration (@iterations)
         {
-            print "$iteration\n";
             if ( $iteration < $oldest )
             {
                 $oldest = $iteration;
@@ -367,12 +371,21 @@ sub checkIterations
             
         }
 
-        # Delete it from the array: 
+        # Delete the oldest iteration from the array: 
         splice @iterations, $oldest_index, 1;
 
-        # And delete on filesystem: 
+        # And delete it also from the filesystem: 
         my @args = ( "rm", "-rf", $backup_directory."/".$oldest);
-        executeCommand( undef, @args );
+        if ( executeCommand( undef, @args ) )
+        {
+            logger("error","Could not delete oldest iteration: "
+                  .$backup_directory."/".$oldest.", try to delete it manually "
+                  ."by executing the following command: @args");
+            return 1;
+        } else
+        {
+            logger("debug","Oldest iteration successfully deleted\n");
+        }
 
     }
 

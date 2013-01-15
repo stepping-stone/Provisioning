@@ -115,6 +115,8 @@ our $global_cfg = $cfg;
 our $syslog_name = $cfg->val("Service","SYSLOG");
 our $opt_R = $opts{'dryrun'};
 
+our $gateway_connection = 1;
+
 # Load necessary modules
 load "Provisioning::Log", ":all";
 load "Provisioning::Backup::KVM", ':all';
@@ -225,7 +227,7 @@ sub generateMachineList
         while(<FH>)
         {
             chomp($_);
-            push( @machines, $_ );
+            push( @machines, $_ ) unless ($_ =~ m/^#/);
         }
         close FH;
 

@@ -274,9 +274,11 @@ sub simpleSearch
     # than just one condition: (&(attribute1 = value1)(attribute2 = value2))
     if ( $filter =~ m/^\(\&/ )
     {
-        logger("warning","More than one condition, considering just the first");
         $filter =~ m/^\(\&\(([a-zA-Z]+)=(.*)\)\(.*$/;
         $filter = "(".$1."=".$2.")";
+        logger("info","More than one condition, considering just the first "
+              ."which is: $filter. (This will not affect the results in any "
+              ."way.)");
     }
 
     $filter =~ m/^\(([a-zA-Z]+)=(.*)\)/;

@@ -199,10 +199,10 @@ sub getParentEntry
 sub exportEntryToFile
 {
 
-    my ( $entry, $ldif ) = @_;
+    my ( $entry, $ldif, $subtree ) = @_;
 
     # Create a new ldif object in write mode and the
-    my $new_ldif = Net::LDAP::LDIF->new( $ldif, "w" );
+    my $new_ldif = Net::LDAP::LDIF->new( $ldif, "a" );
 
     # Check for errors
     if ( ! $new_ldif )
@@ -218,14 +218,27 @@ sub exportEntryToFile
         return 1;
     }
 
-    # Write the content from the entry to the ldif
-    $new_ldif->write_entry( $entry );
+    # If the user wants to save the whole subtree, get it and write it to the 
+    # ldif
+    if ( defined( $subtree ) && $subtree == 1 )
+    {
+        # Search for everything below the entry (get the whole sub tree) 
+        my @subtree = simpleSearch($entry->dn() , "(objectclass=*)" , "sub");
+
+        # Go through all results and write each entry to the ldif
+        foreach my $tmp_entry ( @subtree )
+        {
+            # Write the content from the entry to the ldif
+            $new_ldif->write_entry( $tmp_entry );
+        }
+    } else
+    {
+        # Write the content from the entry to the ldif
+        $new_ldif->write_entry( $entry ); 
+    }
 
     # Chek if there was an error
     $error = $new_ldif->error();
-
-    # Terminate the process (close FH etc.)
-    $new_ldif->done();
 
     # If there was an error log it and return
     if ( $error )
@@ -233,6 +246,9 @@ sub exportEntryToFile
         logger("error","Cannot write entry to ldif: $error");
         return 1;
     }
+
+    # Terminate the process (close FH etc.)
+    $new_ldif->done();
 
     return 0;
 

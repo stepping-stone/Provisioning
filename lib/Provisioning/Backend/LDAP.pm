@@ -799,12 +799,12 @@ sub persistantSearchCallback{
 
                             } # End case restore
 
-             case "unretain"{
+             case "unretainSmallFiles"{
                                 logger("info","Starting unretain process for ".
-                                       $param2->dn() );
+                                       "the small files for ".$param2->dn() );
                                 # Start the process by calling the processEntry
                                 # method
-                                $had_error = processEntry($param2,"unretain");
+                                $had_error = processEntry($param2,"unretainSmallFiles");
                                 
                                 # Test if the entry has been processed or not,
                                 # if not -1 is returned and we can ignore this
@@ -814,10 +814,67 @@ sub persistantSearchCallback{
                                 if( $had_error == 0 )
                                 {
                                     logger("info","Successfully unretained ".
+                                           "the small files for ".$param2->dn());
+                                } else 
+                                {
+                                    logger("error","Could not unretain the ".
+                                           "small files for ".$param2->dn().
+                                           ", return code: $had_error" );
+                                }
+
+                                # We always want to write sstProvisioningState
+                                # that's why we set had_error to 0
+                                $had_error = 0;
+
+                            } # End case unretain
+             case "unretainLargeFiles"{
+                                logger("info","Starting unretain process for ".
+                                       "the large files for ".$param2->dn() );
+                                # Start the process by calling the processEntry
+                                # method
+                                $had_error = processEntry($param2,"unretainLargeFiles");
+                                
+                                # Test if the entry has been processed or not,
+                                # if not -1 is returned and we can ignore this
+                                # entry
+                                return if ( $had_error == -1 );
+
+                                if( $had_error == 0 )
+                                {
+                                    logger("info","Successfully unretained ".
+                                           "the large files for ".$param2->dn());
+                                } else 
+                                {
+                                    logger("error","Could not unretain the ".
+                                           "large files for ".$param2->dn().
+                                           ", return code: $had_error" );
+                                }
+
+                                # We always want to write sstProvisioningState
+                                # that's why we set had_error to 0
+                                $had_error = 0;
+
+                            } # End case unretain
+
+             case "cleanup"{
+                                logger("info","Starting cleanup process for ".
+                                       $param2->dn() );
+                                # Start the process by calling the processEntry
+                                # method
+                                $had_error = processEntry($param2,"cleanup");
+                                
+                                # Test if the entry has been processed or not,
+                                # if not -1 is returned and we can ignore this
+                                # entry
+                                return if ( $had_error == -1 );
+
+                                if( $had_error == 0 )
+                                {
+                                    logger("info","Successfully cleaned up ".
                                            $param2->dn());
                                 } else 
                                 {
-                                    logger("error","Could not unretain ".
+                                    logger("error","Could not cleanup ".
                                            $param2->dn()." without errors, ".
                                            "return code: $had_error" );
                                 }
@@ -826,7 +883,8 @@ sub persistantSearchCallback{
                                 # that's why we set had_error to 0
                                 $had_error = 0;
 
-                            } # End case unretain
+                            } # End case cleanup
+
 
              else { # This is the default case if nothing above matched
                     # No changes made in the LDAP so set update cookie to 0 (we

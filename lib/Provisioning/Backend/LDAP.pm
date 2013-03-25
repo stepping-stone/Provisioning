@@ -328,8 +328,8 @@ sub connectToBackendServer{
                                   async    => 0,
    				  #onerror => return,
                                   #debug    => 15,
-			          verify => 'require',
-				  cafile => '/etc/ssl/certs/Swiss_Certificate_Authority.cert.pem',
+			          #verify => 'require',
+				  #cafile => '/etc/ssl/certs/Swiss_Certificate_Authority.cert.pem',
                                   );
 
   my $local_error=$!;

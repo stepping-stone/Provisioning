@@ -60,6 +60,7 @@ use Module::Load;
 use Sys::Syslog;
 use Cwd 'abs_path';
 use File::Basename;
+use LockFile::Simple qw(lock trylock unlock);
 
 # Flush the output
 $|++;
@@ -124,6 +125,19 @@ load "Provisioning::Backend::$backend", ":all";
 load "Provisioning::Backup::KVM::KVMBackup",':all';
 load "Provisioning::TransportAPI::$TransportAPI",':all';
 
+# Try to lock the script
+my $lock = LockFile::Simple->make( -hold => 0 );
+my $lock_file = "/var/run/Provisioning-Backup-KVM-Wrapper";
+unless( $lock->trylock( $lock_file ) ){
+
+  logger("warning","$service-Deamon already running (file $lock_file already locked), program exits now");
+  exit;
+
+}
+else{
+  logger("debug","file: $lock_file locked");
+}
+
 # Nice look and feel in debug mode
 print "\n\n" if ( $debug );
 
@@ -148,6 +162,10 @@ logger("debug","Backing up the following machines: @machines_list");
 backupMachines( @machines_list );
    
 logger("info","Backup-KVM-Wrapper script finished");
+
+# Unlock the service
+$lock->unlock($lock_file);
+
 closelog();
 
 ################################################################################

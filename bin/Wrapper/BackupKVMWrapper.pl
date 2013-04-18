@@ -158,6 +158,13 @@ my @machines_list = generateMachineList( $opts{'list'} );
 # Log which machines are going to be backed up
 logger("debug","Backing up the following machines: @machines_list");
 
+# Write the backup date to the server
+my $backup_date = strftime("%Y%m%d%H%M%S",localtime());
+modifyAttribute( "General",
+                 "Backup_date",
+                 $backup_date,
+                 $backend_connection);
+
 # Backup the machines
 backupMachines( @machines_list );
    
@@ -356,8 +363,8 @@ sub checkIterations
     # Remove the file:// in front
     $backup_directory =~ s/file\:\/\///;
 
-    # Add the intermediate path and the machine name
-    $backup_directory .= "/".returnIntermediatePath()."/$machine";
+    # Add the intermediate path 
+    $backup_directory .= "/".returnIntermediatePath()."/..";
 
     # Go through the hole directory and put all iterations in the iterations 
     # array

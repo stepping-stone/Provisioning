@@ -334,6 +334,16 @@ sub modifyAttribute
 {
     my ($entry, $attribute, $new_value, $connection)=@_;
 
+    # Get the attribute in upper case
+    my $uc_attribute = uc($attribute);
+
+    # Write the changes to the backend if the value exists
+    if ( $connection->exists($entry, $uc_attribute) )
+    {
+        $connection->newval( $entry, $uc_attribute, $new_value );
+        $connection->RewriteConfig();
+    }
+
     # Get the log directory 
     my $log_dir = $information_file->val("General","LOGDIR");
 

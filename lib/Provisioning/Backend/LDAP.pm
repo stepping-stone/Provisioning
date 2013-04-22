@@ -635,7 +635,7 @@ sub persistantSearchCallback{
             case "add"{
 			logger("info","Adding ".$param2->dn());
 
-			$had_error = processEntry($param2,"add");
+			$had_error = processEntry($param2,"add",$state);
 
 			if(!$had_error){
 			  logger("info","Successfully added ".$param2->dn());
@@ -647,7 +647,7 @@ sub persistantSearchCallback{
 
 	    case "modify"{
 			  logger("info","Modifing ".$param2->dn());
-			  $had_error=processEntry($param2,"modify");
+			  $had_error=processEntry($param2,"modify",$state);
 			  if(!$had_error){
 			    logger("info","Successfully modified ".$param2->dn());
 			  }
@@ -658,7 +658,7 @@ sub persistantSearchCallback{
 
 	    case "delete"{
 			  logger("info","Deleting ".$param2->dn());
-			  $had_error=processEntry($param2,"delete");
+			  $had_error=processEntry($param2,"delete",$state);
 
 			  if(!$had_error){
 			    logger("info","Successfully deleted ".$param2->dn());
@@ -674,7 +674,7 @@ sub persistantSearchCallback{
                                        $param2->dn() );
                                 # Start the process by calling the processEntry
                                 # method
-                                $had_error = processEntry($param2,"snapshot");
+                                $had_error = processEntry($param2,"snapshot",$state);
 
                                 # Test if the entry has been processed or not,
                                 # if not -1 is returned and we can ignore this
@@ -704,7 +704,7 @@ sub persistantSearchCallback{
                                        $param2->dn() );
                                 # Start the process by calling the processEntry
                                 # method
-                                $had_error = processEntry($param2,"merge");
+                                $had_error = processEntry($param2,"merge",$state);
                                 
                                 # Test if the entry has been processed or not,
                                 # if not -1 is returned and we can ignore this
@@ -733,7 +733,7 @@ sub persistantSearchCallback{
                                        $param2->dn() );
                                 # Start the process by calling the processEntry
                                 # method
-                                $had_error = processEntry($param2,"retain");
+                                $had_error = processEntry($param2,"retain",$state);
                                 
                                 # Test if the entry has been processed or not,
                                 # if not -1 is returned and we can ignore this
@@ -762,7 +762,7 @@ sub persistantSearchCallback{
                                        $param2->dn() );
                                 # Start the process by calling the processEntry
                                 # method
-                                $had_error = processEntry($param2,"delete");
+                                $had_error = processEntry($param2,"delete",$state);
                                 
                                 # Test if the entry has been processed or not,
                                 # if not -1 is returned and we can ignore this
@@ -791,7 +791,7 @@ sub persistantSearchCallback{
                                        $param2->dn() );
                                 # Start the process by calling the processEntry
                                 # method
-                                $had_error = processEntry($param2,"restore");
+                                $had_error = processEntry($param2,"restore",$state);
                                 
                                 # Test if the entry has been processed or not,
                                 # if not -1 is returned and we can ignore this

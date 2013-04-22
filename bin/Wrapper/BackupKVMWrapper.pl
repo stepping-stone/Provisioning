@@ -61,6 +61,7 @@ use Sys::Syslog;
 use Cwd 'abs_path';
 use File::Basename;
 use LockFile::Simple qw(lock trylock unlock);
+use POSIX;
 
 # Flush the output
 $|++;

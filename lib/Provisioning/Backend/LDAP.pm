@@ -600,6 +600,24 @@ sub persistantSearchCallback{
     $entryUUID = unpack('H*',$sync_controls[0]->entryUUID());
     $cookie = (defined($sync_controls[0]->cookie()) ?  $sync_controls[0]->cookie() : 'UNDEF');
 
+    # Check what kind of modus we have, if it is combined, we need to check if
+    # the current change is selfcare or LDAP
+    if($modus=~/combined/i)
+    {
+        # Check if the sstProvisioning* attributes exist, if yes, modus is
+        # selfcare, if not, modus is LDAP
+        if ( $param2->exists('sstProvisioningState') &&
+             $param2->exists('sstProvisioningMode') &&
+             $param2->exists('sstProvisioningExecutionDate')
+           )
+        {
+            $modus = "selfcare";
+        } else
+        {
+            $modus = "LDAP";
+        }
+    }
+
     # we have two modi, selfcare and ldap, if modus is selfcare ...
     if($modus=~/selfcare/i){
 
@@ -940,11 +958,93 @@ sub persistantSearchCallback{
       # we simply check the entys state and perform the aproppriate action. 
       switch($state) {
         case LDAP_SYNC_PRESENT  { print "present\n"; } #TODO
-        case LDAP_SYNC_ADD      { print "add\n"; }#TODO
-        case LDAP_SYNC_MODIFY   { print "modify\n"; }#TODO
-        case LDAP_SYNC_DELETE   { print "delete\n"; }#TODO
-        else                    { print "undefined\n"; }#TODO
+        case LDAP_SYNC_ADD      {
+                                    # Call the process entry method and pass the
+                                    # given entry and state "add"
+                                    logger("info","Adding entry: ".
+                                       $param2->dn() );
+
+                                    # Start the process by calling the 
+                                    # processEntry method
+                                    $had_error = processEntry($param2,
+                                                              "add",
+                                                              $state);
+
+                                    # Check if the entry could be added without
+                                    # errors
+                                    if( $had_error == 0 )
+                                    {
+                                        logger("info","Successfully added ".
+                                               $param2->dn());
+                                    } else 
+                                    {
+                                        logger("error","Could not add ".
+                                               $param2->dn()." without errors,".
+                                               " return code: $had_error" );
+                                    }
+
+                                }
+        case LDAP_SYNC_MODIFY   {
+                                    # Call the process entry method and pass the
+                                    # given entry and state "modify"
+                                    logger("info","Modifying entry: ".
+                                       $param2->dn() );
+
+                                    # Start the process by calling the 
+                                    # processEntry method
+                                    $had_error = processEntry($param2,
+                                                              "modify",
+                                                              $state);
+
+                                    # Check if the entry could be added without
+                                    # errors
+                                    if( $had_error == 0 )
+                                    {
+                                        logger("info","Successfully modified ".
+                                               $param2->dn());
+                                    } else 
+                                    {
+                                        logger("error","Could not modify ".
+                                               $param2->dn()." without errors,".
+                                               " return code: $had_error" );
+                                    }
+                                }
+        case LDAP_SYNC_DELETE   {
+                                    # Call the process entry method and pass the
+                                    # given entry and state "add"
+                                    logger("info","Deleting entry: ".
+                                       $param2->dn() );
+
+                                    # Start the process by calling the 
+                                    # processEntry method
+                                    $had_error = processEntry($param2,
+                                                              "delete",
+                                                              $state);
+
+                                    # Check if the entry could be added without
+                                    # errors
+                                    if( $had_error == 0 )
+                                    {
+                                        logger("info","Successfully deleted ".
+                                               $param2->dn());
+                                    } else 
+                                    {
+                                        logger("error","Could not delete ".
+                                               $param2->dn()." without errors,".
+                                               " return code: $had_error" );
+                                    } 
+                                }
+        else                    {
+                                    # We don't know this state so just log it
+                                    logger("error","Received an entry ("
+                                          .$param2->dn().") in LDAP mode and "
+                                          ."state $state. This state is unknown"
+                                          ." so we cannot process this entry"
+                                          );
+                                }
+
       } # End of switch($state) {
+
     } # end elsif($modus=~/ldap/i)
 
     # We need to keep the cookie (if returned from the syncrepl provider)

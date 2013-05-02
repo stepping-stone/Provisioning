@@ -38,18 +38,91 @@ BackupKVMWrapper.pl
 
 =head1 Usage
  
- BackupKVMWrapper.pl -c option_argument[-d] [-h]
+BackupKVMWrapper.pl -c|--config option_argument -l|--list option_argument [-d|--debug] [-r|--dry-run] [-h|--help]
 
 =head1 Description
+
+This wrapper will call the three sub processes (snapshot, merge and retain) for
+a all machines in a given list. After all machines from the list have been 
+snapshotted, the script will call merge and retain consecutively for each machine.
+
+=over
+
+=item snapshot
+
+Saving the machines memory and CPU state to a file, moving the disk-image to the
+retain location, creating a new (empty) disk image and restoring the machine
+form the saved state file. 
+
+=item merge
+
+Merge the newly created disk image with the one of the retain location
+
+=item retain
+
+Copy the disk image and state file from retain location to the backup location
+
+=back
 
 =head1 Options
 
 =over
 
-=item -c /path/to/your/configuration
+=item -c|--config /path/to/your/configuration
 
-The -c option is mandatory and specifies the backend (service) configuration
+This option is mandatory and specifies the backend (service) configuration
 file.
+
+=item -l|--list <list>
+
+This mandatory option provides a list of all machines that should be processed in the run.
+You have two possibilites to provide this list: 
+
+=over
+
+=item file:///path/to/list/file
+
+You can specify a file, which contains the machine-names on seperate lines. The
+'#' character indicates a comment, lines starting with '#' will be ignored.
+
+=item "comma,separated,list"
+
+You can directly pass the name of all machines in a comma separated list.
+
+=back
+
+=item -d|--debug
+
+With this option, the script will print all log messages to STDOUT. 
+
+=item -r|--dry-run
+
+With this option, the script performs a dry-run. This means, the script only 
+prints out what it would do. The system itself is not modified at all.
+
+=item -h|--help
+
+Display this help.
+
+=back 
+
+=head1 Examples
+
+=over 
+
+=item BackupKVMWrapper.pl -c /home/config/wrapper.conf -l "machine-01,machine-02"
+
+This run takes the configuration from the file "/home/config/wrapper.conf" and 
+will backup machine-01 and machine-02
+
+=item BackupKVMWrapper.pl -c /home/config/wrapper.conf -l file:///home/config/machines.txt -d -r
+
+This run takes the configuration from the file "/home/config/wrapper.conf",
+prints all the messages to STDOUT and would pretend to backup all machines in 
+"/home/config/machines.txt". But since the -r option is specified, no changes 
+are made on the system.
+
+=back
 
 =cut
 

@@ -75,14 +75,14 @@ sub sendMail{
   my $port=$mailcfg->val('Mail','PORT');
   my $username=$mailcfg->val('Mail','USERNAME');
   my $password=$mailcfg->val('Mail','PASSWORD');
-  my $from_adress=$mailcfg->val('Mail','FROMADRESS');
+#  my $from_address=$mailcfg->val('Mail','FROMADRESS');
   my $from_name=$mailcfg->val('Mail','FROMNAME');
   my $want_info_mail=$mailcfg->val('Mail','WANTINFOMAIL');
 
   my $to=$mailcfg->val('Mail','SENDTO');
 
   # Test if we have all information to send the mail
-  if ( !$host || !$port || !$username || !$password || !$to || !$from_adress )
+  if ( !$host || !$port || !$username || !$password || !$to )
   {
     # Log that we don't have enough information and return
     logger("warning","Should send a mail with the message: '$message'. But cannot"

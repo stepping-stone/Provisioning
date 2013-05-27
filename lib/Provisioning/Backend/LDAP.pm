@@ -1043,7 +1043,7 @@ sub persistantSearchCallback{
                                           );
                                 }
 
-      } # End of switch($state) {
+      } # End of switch($state)
 
     } # end elsif($modus=~/ldap/i)
 
@@ -1341,7 +1341,7 @@ sub get_entryCSN{
   # if the cookie file is empty, we have an undefined CSN
   else{
     # in selfcare mode we NEED a CSN so we set one to the 1. Januray 2000
-    if($modus=~/selfcare/i){
+    if($modus=~/selfcare/i || $modus=~/combined/i){
       $CSN="20000101000000.000000Z#000000#000#000000";
     }
     else{

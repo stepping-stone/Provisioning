@@ -25,7 +25,7 @@ package Provisioning::Information;
 # permissions and limitations under the Licence.
 #
 
-use Net::SMTP::TLS;
+use Net::SMTPS;
 use Config::IniFiles;
 use strict;
 use warnings;
@@ -78,6 +78,9 @@ sub sendMail{
 #  my $from_address=$mailcfg->val('Mail','FROMADRESS');
   my $from_name=$mailcfg->val('Mail','FROMNAME');
   my $want_info_mail=$mailcfg->val('Mail','WANTINFOMAIL');
+  my $ca_dir = $mailcfg->val('Mail','CA_DIR');
+  my $ssl = $mailcfg->val('Mail','SSL');
+  my $auth_method = $mailcfg->val('Mail','AUTH_METHOD');
 
   my $to=$mailcfg->val('Mail','SENDTO');
 
@@ -160,14 +163,17 @@ sub sendMail{
   my $date=strftime("%d %b %Y %H:%M:%S %z",localtime());
   setlocale(LC_TIME,$oldLC);
 
-   
-
   #create the mailer ...
-  my $mailer = new Net::SMTP::TLS(
+  my $mailer = Net::SMTPS->new(
         $host,
-        Port    =>      $port, 
-        User    =>      $username,
-        Password=>      $password);
+        Port            => $port, 
+        doSSL           => $ssl,
+        SSL_verify_mode => 'SSL_VERIFY_PEER',
+        SSL_ca_path     => $ca_dir,
+        );
+
+  # authenticate
+  $mailer->auth($username,$password,$auth_method);
 
   #.. and send the mail
   $mailer->mail($username);

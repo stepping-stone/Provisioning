@@ -38,7 +38,7 @@ BackupKVMWrapper.pl
 
 =head1 Usage
  
-BackupKVMWrapper.pl -c|--config option_argument -l|--list option_argument [-d|--debug] [-r|--dry-run] [-h|--help]
+BackupKVMWrapper.pl -c|--config option_argument (( -i|--include) | (-e|--exclude)) option_argument [-d|--debug] [-r|--dry-run] [-h|--help]
 
 =head1 Description
 
@@ -73,9 +73,27 @@ Copy the disk image and state file from retain location to the backup location
 This option is mandatory and specifies the backend (service) configuration
 file.
 
-=item -l|--list <list>
+=item -i|--inclide <list>
 
-This mandatory option provides a list of all machines that should be processed in the run.
+This mandatory (if -e|--exculde is not provided) option provides a list of all machines that should be processed in the run.
+You have two possibilites to provide this list: 
+
+=over
+
+=item file:///path/to/list/file
+
+You can specify a file, which contains the machine-names on seperate lines. The
+'#' character indicates a comment, lines starting with '#' will be ignored.
+
+=item "comma,separated,list"
+
+You can directly pass the name of all machines in a comma separated list.
+
+=back
+
+=item -e|--exclude <list>
+
+This mandatory (if -i|--include is not provided) option provides a list of all machines that should NOT be processed in the run. All other machines on your system will be backed up.
 You have two possibilites to provide this list: 
 
 =over
@@ -110,17 +128,27 @@ Display this help.
 
 =over 
 
-=item BackupKVMWrapper.pl -c /home/config/wrapper.conf -l "machine-01,machine-02"
+=item BackupKVMWrapper.pl -c /home/config/wrapper.conf- i"machine-01,machine-02"
 
 This run takes the configuration from the file "/home/config/wrapper.conf" and 
 will backup machine-01 and machine-02
 
-=item BackupKVMWrapper.pl -c /home/config/wrapper.conf -l file:///home/config/machines.txt -d -r
+=item BackupKVMWrapper.pl -c /home/config/wrapper.con f-i file:///home/config/machines.txt -d -r
 
 This run takes the configuration from the file "/home/config/wrapper.conf",
 prints all the messages to STDOUT and would pretend to backup all machines in 
 "/home/config/machines.txt". But since the -r option is specified, no changes 
 are made on the system.
+
+=item BackupKVMWrapper.pl -c /home/config/wrapper.conf -e "machine-02"
+
+This run takes the configuration from the file "/home/config/wrapper.conf" and 
+will backup all machines on your system except for machine-02.
+
+=item BackupKVMWrapper.pl -c /home/config/wrapper.conf -e ""
+
+This run takes the configuration from the file "/home/config/wrapper.conf" and 
+will backup ALL machines on your system.
 
 =back
 
@@ -135,6 +163,7 @@ use Cwd 'abs_path';
 use File::Basename;
 use LockFile::Simple qw(lock trylock unlock);
 use POSIX;
+use Sys::Virt;
 
 # Flush the output
 $|++;
@@ -165,9 +194,10 @@ GetOptions (
   \%opts,
   "help|h",             # Displays help text
   "debug|d",            # Enables debug mode
-  "list|l:s",           # Comma seperated list or file which contains all machines
+  "include|i:s",           # Comma seperated list or file which contains all machines
   "config|c:s",         # Specifys the configuration file
-  "dryrun|r"            # Enables dry run mode
+  "dryrun|r",           # Enables dry run mode
+  "exclude|e:s"     # Comma seperated list or file which contains all machines which should not be backed up
 );
 
 # Get the scripts location
@@ -227,7 +257,9 @@ unless ( defined($backend_connection) )
 }
 
 # Generate the array machines list according to the list parameter
-my @machines_list = generateMachineList( $opts{'list'} );
+my @machines_list;
+@machines_list = generateMachineList( $opts{'include'}, 1 ) if ( defined($opts{'include'}) );
+@machines_list = generateMachineList( $opts{'exclude'}, 0) if ( defined($opts{'exclude'}) );
 
 # Log which machines are going to be backed up
 logger("debug","Backing up the following machines: @machines_list");
@@ -279,13 +311,20 @@ sub checkCommandLineArguments
         exit 1;
     }
 
-    unless( $opts{'list'} )
+    if ( ! defined($opts{'include'}) && !defined($opts{'exclude'}) )
     {
         # Log and exit
         syslog("LOG_ERR","No list specified! You need to pass a list (either "
-              ."comma seperated or with file:///path/to/file) with the --list/"
-              ."-l option");
+              ."comma seperated or with file:///path/to/file) with the --include/"
+              ."-i or the --exclude/-e option");
         exit 1;
+    }
+    
+    if ( defined($opts{'exclude'}) && defined($opts{'include'}) )
+    {
+            syslog("LOG_ERR","Cannot use --exclude and --include option together"
+                          .". Use -h for more information");
+            exit 1;
     }
 
 } # end sub checkCommandLineArguments
@@ -300,6 +339,7 @@ sub checkCommandLineArguments
 sub generateMachineList
 {
     my $list = shift;
+    my $is_include_list = shift;
 
     # The list we will return
     my @machines = ();
@@ -316,7 +356,7 @@ sub generateMachineList
         {
             logger("error","Cannot read file $list, please make sure it exists "
                   ."and has correct permission");
-            return undef;
+            exit 1;
         } 
 
         # If the file is readable open and parse it
@@ -336,8 +376,95 @@ sub generateMachineList
         @machines = split(",",$list);
     }
 
-    # return the list / array of machine names
-    return @machines;
+    # If it is an include list, we can return the list / array of machine names
+    return @machines if ( $is_include_list );
+    
+    # If it is an exclude list, we need to get all machines on the current host
+    my @all_machines; 
+    my @not_running_machines;
+    
+    # Connect to libvirt
+    my $vmm = Sys::Virt->new( addr => "qemu:///system" );
+
+     # Get all machines running on the system
+    eval
+    {
+        @all_machines = $vmm->list_domains();
+    };
+
+    # If there was an error, log it
+    if ( $@ )
+    {
+        my $error_message = $@->message;
+        logger("error","Cannot get machines, libvirt says: $error_message. Stopping here");
+        exit 1;
+    }
+
+    # Get all defined but not running machines on the system
+    eval
+    {
+        @not_running_machines = $vmm->list_defined_domains();
+    };
+
+    # If there was an error, log it
+    if ( $@ )
+    {
+        my $error_message = $@->message;
+        logger("error","Cannot get defined machines :libvirt says: $error_message. Stopping here");
+        exit 1;
+    }
+    
+    # Add the not running machines to the machines (we want all machines)
+    push(@all_machines,@not_running_machines);
+
+    # Test if there is at least one machine, if yes, we need the names of these machines
+    if ( @all_machines == 0 )
+    {
+        logger("warning","No machines found on current system");
+        return undef;
+    } else
+    {
+        my $i = 0;
+        while ( $all_machines[$i] )
+        {
+            # Get the machines name
+            my $machine_name;
+            eval
+            {
+                $machine_name = $all_machines[$i]->get_name();
+            };
+            
+             # If there was an error, log it
+            if ( $@ )
+            {
+                my $error_message = $@->message;
+                logger("error","Cannot get machine name: libvirt says: $error_message. Stopping here");
+                $i++;
+                next;
+            } else
+            {
+                $all_machines[$i] = $machine_name;
+                $i++;
+            }
+        }
+    }
+
+    # Now remove the machines which should not be backed up
+    my @backup_machines;
+    foreach my $machine ( @all_machines )
+    {
+        if ( ! grep ( /^$machine$/, @machines) )
+        {
+            # Check if the machine name could be found, i.e. if the machine is a string now
+            if ( $machine =~ m/[\w\s-]*/ )
+            {
+                push(@backup_machines,$machine);
+            }
+        }
+    }
+    
+    # Finally return the backup machines
+    return @backup_machines;
 
 } # end sub generateMachineList
 

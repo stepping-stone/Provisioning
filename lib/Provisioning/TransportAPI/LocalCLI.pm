@@ -108,7 +108,7 @@ sub executeCommand{
   } else
   {
     # If not in dry-run execute the command and grab its output
-    $output = `$command 2>&1`;
+    $output = `$command`;
     
     # Save the commands return code
     $error = $?;

@@ -1,5 +1,5 @@
 # Test configurations
 *_test.conf
 
-# Netbeans project folder
-nbproject/*
+# Eclipse project files
+.project

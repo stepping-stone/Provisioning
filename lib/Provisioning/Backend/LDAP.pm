@@ -633,8 +633,8 @@ sub persistantSearchCallback{
         # Get the date
         my $date=`date +"%Y%m%d"`;
 
-	# remove the breakline form the recieved date to be able to compare it
-	$date=~s/\n//;
+        # remove the breakline form the recieved date to be able to compare it
+        $date=~s/\n//;
 
         # do we have to do it today? 0 or today's date means yes, something 
         # else means we don't have to do anything. 
@@ -646,287 +646,24 @@ sub persistantSearchCallback{
 
           # There are going to be some changes made in the LDAP directory, 
           # thats why we need to update the cookie file.
-	  $update_cookie = 1;
+          $update_cookie = 1;
 
-          # check whether we have to add, modify or delete the entry. 
-          switch($sstProvisioningMode){
-            case "add"{
-			logger("info","Adding ".$param2->dn());
+          # Call the processEntry method according to the $sstProvisioningMode
+          # attribute
 
-			$had_error = processEntry($param2,"add",$state);
+		  logger("info",$sstProvisioningMode."ing".$param2->dn());
 
-			if(!$had_error){
-			  logger("info","Successfully added ".$param2->dn());
-			}
-			else{
-			  logger("error","Could not add ".$param2->dn()." without errors, check your mailbox and syslog for further details.");
-			} # end if(!$had_error)
-	    } # end case "add"
+          $had_error = processEntry($param2,$sstProvisioningMode,$state);
 
-	    case "modify"{
-			  logger("info","Modifing ".$param2->dn());
-			  $had_error=processEntry($param2,"modify",$state);
-			  if(!$had_error){
-			    logger("info","Successfully modified ".$param2->dn());
-			  }
-			  else{
-			    logger("error","Could not modify ".$param2->dn()." without errors, check your mailbox and syslog for further details.");
-			  } # end if(!$had_error)
-	    } # end case modify
-
-	    case "delete"{
-			  logger("info","Deleting ".$param2->dn());
-			  $had_error=processEntry($param2,"delete",$state);
-
-			  if(!$had_error){
-			    logger("info","Successfully deleted ".$param2->dn());
-			  }
-			  else {
-			    logger("error","Could not delete ".$param2->dn()." without errors, check your mailbox and syslog for further details.");
-			  } # end if(!$had_error)
-
-	    } # end case delete
-
-            case "snapshot" {
-                                logger("info","Starting snapshot process for ".
-                                       $param2->dn() );
-                                # Start the process by calling the processEntry
-                                # method
-                                $had_error = processEntry($param2,"snapshot",$state);
-
-                                # Test if the entry has been processed or not,
-                                # if not -1 is returned and we can ignore this
-                                # entry
-                                return if ( $had_error == -1 );
-                                
-                                
-                                if( $had_error == 0 )
-                                {
-                                    logger("info","Successfully snapshotted ".
-                                           $param2->dn());
-                                } else 
-                                {
-                                    logger("error","Could not snapshot ".
-                                           $param2->dn()." without errors, ".
-                                           "return code: $had_error" );
-                                }
-
-                                # We always want to write sstProvisioningState
-                                # that's why we set had_error to 0
-                                $had_error = 0;
-
-                            } # End case snapshot
-
-            case "merge"    {
-                                logger("info","Starting merge process for ".
-                                       $param2->dn() );
-                                # Start the process by calling the processEntry
-                                # method
-                                $had_error = processEntry($param2,"merge",$state);
-                                
-                                # Test if the entry has been processed or not,
-                                # if not -1 is returned and we can ignore this
-                                # entry
-                                return if ( $had_error == -1 );
-
-                                if( $had_error == 0 )
-                                {
-                                    logger("info","Successfully merged ".
-                                           $param2->dn());
-                                } else 
-                                {
-                                    logger("error","Could not merge ".
-                                           $param2->dn()." without errors, ".
-                                           "return code: $had_error" );
-                                }
-
-                                # We always want to write sstProvisioningState
-                                # that's why we set had_error to 0
-                                $had_error = 0;
-
-                            } # End case merge
-
-            case "retain"   {
-                                logger("info","Starting retain process for ".
-                                       $param2->dn() );
-                                # Start the process by calling the processEntry
-                                # method
-                                $had_error = processEntry($param2,"retain",$state);
-                                
-                                # Test if the entry has been processed or not,
-                                # if not -1 is returned and we can ignore this
-                                # entry
-                                return if ( $had_error == -1 );
-
-                                if( $had_error == 0 )
-                                {
-                                    logger("info","Successfully retained ".
-                                           $param2->dn());
-                                } else 
-                                {
-                                    logger("error","Could not retain ".
-                                           $param2->dn()." without errors, ".
-                                           "return code: $had_error" );
-                                }
-
-                                # We always want to write sstProvisioningState
-                                # that's why we set had_error to 0
-                                $had_error = 0;
-
-                            } # End case retain
-
-             case "delete"  {
-                                logger("info","Starting delete process for ".
-                                       $param2->dn() );
-                                # Start the process by calling the processEntry
-                                # method
-                                $had_error = processEntry($param2,"delete",$state);
-                                
-                                # Test if the entry has been processed or not,
-                                # if not -1 is returned and we can ignore this
-                                # entry
-                                return if ( $had_error == -1 );
-
-                                if( $had_error == 0 )
-                                {
-                                    logger("info","Successfully deleted ".
-                                           $param2->dn());
-                                } else 
-                                {
-                                    logger("error","Could not delete ".
-                                           $param2->dn()." without errors, ".
-                                           "return code: $had_error" );
-                                }
-
-                                # We always want to write sstProvisioningState
-                                # that's why we set had_error to 0
-                                $had_error = 0;
-
-                            } # End case delete
-
-             case "restore" {
-                                logger("info","Starting restore process for ".
-                                       $param2->dn() );
-                                # Start the process by calling the processEntry
-                                # method
-                                $had_error = processEntry($param2,"restore",$state);
-                                
-                                # Test if the entry has been processed or not,
-                                # if not -1 is returned and we can ignore this
-                                # entry
-                                return if ( $had_error == -1 );
-
-                                if( $had_error == 0 )
-                                {
-                                    logger("info","Successfully restored ".
-                                           $param2->dn());
-                                } else 
-                                {
-                                    logger("error","Could not restore ".
-                                           $param2->dn()." without errors, ".
-                                           "return code: $had_error" );
-                                }
-
-                                # We always want to write sstProvisioningState
-                                # that's why we set had_error to 0
-                                $had_error = 0;
-
-                            } # End case restore
-
-             case "unretainSmallFiles"{
-                                logger("info","Starting unretain process for ".
-                                       "the small files for ".$param2->dn() );
-                                # Start the process by calling the processEntry
-                                # method
-                                $had_error = processEntry($param2,"unretainSmallFiles");
-                                
-                                # Test if the entry has been processed or not,
-                                # if not -1 is returned and we can ignore this
-                                # entry
-                                return if ( $had_error == -1 );
-
-                                if( $had_error == 0 )
-                                {
-                                    logger("info","Successfully unretained ".
-                                           "the small files for ".$param2->dn());
-                                } else 
-                                {
-                                    logger("error","Could not unretain the ".
-                                           "small files for ".$param2->dn().
-                                           ", return code: $had_error" );
-                                }
-
-                                # We always want to write sstProvisioningState
-                                # that's why we set had_error to 0
-                                $had_error = 0;
-
-                            } # End case unretain
-             case "unretainLargeFiles"{
-                                logger("info","Starting unretain process for ".
-                                       "the large files for ".$param2->dn() );
-                                # Start the process by calling the processEntry
-                                # method
-                                $had_error = processEntry($param2,"unretainLargeFiles");
-                                
-                                # Test if the entry has been processed or not,
-                                # if not -1 is returned and we can ignore this
-                                # entry
-                                return if ( $had_error == -1 );
-
-                                if( $had_error == 0 )
-                                {
-                                    logger("info","Successfully unretained ".
-                                           "the large files for ".$param2->dn());
-                                } else 
-                                {
-                                    logger("error","Could not unretain the ".
-                                           "large files for ".$param2->dn().
-                                           ", return code: $had_error" );
-                                }
-
-                                # We always want to write sstProvisioningState
-                                # that's why we set had_error to 0
-                                $had_error = 0;
-
-                            } # End case unretain
-
-             case "cleanup"{
-                                logger("info","Starting cleanup process for ".
-                                       $param2->dn() );
-                                # Start the process by calling the processEntry
-                                # method
-                                $had_error = processEntry($param2,"cleanup");
-                                
-                                # Test if the entry has been processed or not,
-                                # if not -1 is returned and we can ignore this
-                                # entry
-                                return if ( $had_error == -1 );
-
-                                if( $had_error == 0 )
-                                {
-                                    logger("info","Successfully cleaned up ".
-                                           $param2->dn());
-                                } else 
-                                {
-                                    logger("error","Could not cleanup ".
-                                           $param2->dn()." without errors, ".
-                                           "return code: $had_error" );
-                                }
-
-                                # We always want to write sstProvisioningState
-                                # that's why we set had_error to 0
-                                $had_error = 0;
-
-                            } # End case cleanup
-
-
-             else { # This is the default case if nothing above matched
-                    # No changes made in the LDAP so set update cookie to 0 (we
-                    # don't need to update the cookie)
-                    $update_cookie = 0;
-                  } # end else 
-
-          } # end switch
+          if( !$had_error ) {
+              logger("info","Successfully ".$sstProvisioningMode."ed ".
+                     $param2->dn());
+          }
+          else{
+              logger("error","Could not ".$sstProvisioningMode." ".
+                     $param2->dn()." without errors, check your mailbox and ".
+                     "syslog for further details.");
+          } # end if(!$had_error)
 
           # If there were no errors, we can write the current date and time 
           # in the specified format to the entries sstProvisioningState

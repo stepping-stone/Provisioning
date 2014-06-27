@@ -202,7 +202,7 @@ sub exportEntryToFile
     my ( $entry, $ldif, $subtree ) = @_;
 
     # Create a new ldif object in write mode and the
-    my $new_ldif = Net::LDAP::LDIF->new( $ldif, "a" );
+    my $new_ldif = Net::LDAP::LDIF->new( $ldif, "a", wrap => 0 );
 
     # Check for errors
     if ( ! $new_ldif )
@@ -324,12 +324,12 @@ sub connectToBackendServer{
 
   # try to establish the conncetion to the specified LDAP-Server
   $ldap_connection = Net::LDAP->new( $ldap_server,
-                                  port => $ldap_port,
-                                  async    => 0,
-   				  #onerror => return,
-                                  #debug    => 15,
-			          #verify => 'require',
-				  #cafile => '/etc/ssl/certs/Swiss_Certificate_Authority.cert.pem',
+                                     port => $ldap_port,
+                                     async    => 0,
+                                     #onerror => return,
+                                     #debug    => 15,
+                                     #verify => 'require',
+                                     #cafile => '/etc/ssl/certs/Swiss_Certificate_Authority.cert.pem',
                                   );
 
   my $local_error=$!;
@@ -464,8 +464,8 @@ sub simpleSearch{
 
   # Search from the given base with the given scope and filter
   my $search_result = $search_connection->search(base	=> $subtree,
-                           	 	  	scope	=> $scope,
-                            			filter	=> $filter);
+                                                 scope	=> $scope,
+                                                 filter	=> $filter);
 
   # The search return an hash ref so parse it and extract the serach results and
   # put them in an array
@@ -1158,15 +1158,17 @@ sub persistantSearchCallback{
   elsif($message->code) {
     if ($message->code == 1) {
 
+      logger("warning","Lost connection to backend server ".$cfg->val().". Trying to reconnect.");
+
       my $new_connection=connectToBackendServer("reconnect",1);
 
       if($new_connection){
-        logger("info","Established new connection to the server. Starting a new search now.", "$service-$type");
-	startPersistantSearch($new_connection);
+        logger("info","Established new connection to the server. Starting a new search now.");
+        startPersistantSearch($new_connection);
       }
       else{
         logger("error","Communication error, no connection to server (could not reconnect). Please restart the daemon for $service.");
-	exitSearch();
+        exitSearch();
       }
       
     } 

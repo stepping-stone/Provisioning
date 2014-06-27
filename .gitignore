@@ -3,3 +3,4 @@
 
 # Eclipse project files
 .project
+.includepath

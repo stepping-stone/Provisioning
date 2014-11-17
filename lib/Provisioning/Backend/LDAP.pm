@@ -142,7 +142,7 @@ my $global_cfg = $Provisioning::global_cfg;
 # Read the configuration files and set some variables
 my $modus= $cfg->val('Service','MODUS');
 my $info= $global_cfg->val('Global','INFO');
-my $debug= $global_cfg->val('Global','DEBUG') || $Proviosioning::opt_d;
+my $debug= $global_cfg->val('Global','DEBUG') || $Provisioning::opt_d;
 my $service= $cfg->val('Service', 'SERVICE');
 my $type= $cfg->val('Service', 'TYPE');
 my $gateway=$Provisioning::TransportAPI;

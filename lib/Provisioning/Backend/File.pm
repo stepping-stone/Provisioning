@@ -1,6 +1,6 @@
 package Provisioning::Backend::File;
 
-# Copyright (C) 2012 stepping stone GmbH
+# Copyright (C) 2014 stepping stone GmbH
 #                    Switzerland
 #                    http://www.stepping-stone.ch
 #                    support@stepping-stone.ch
@@ -33,7 +33,6 @@ use Provisioning::Information;
 use Module::Load;
 use Config::IniFiles;
 
-use Switch;
 use POSIX;
 use File::Basename;
 
@@ -59,11 +58,9 @@ queries ...) are handled in this module.
 
 =item Log
 
-=item nformation
+=item Information
 
 =item Module::Load
-
-=item Switch
 
 =back
 

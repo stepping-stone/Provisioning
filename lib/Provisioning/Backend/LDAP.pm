@@ -1,6 +1,6 @@
 package Provisioning::Backend::LDAP;
 
-# Copyright (C) 2012 stepping stone GmbH
+# Copyright (C) 2014 stepping stone GmbH
 #                    Switzerland
 #                    http://www.stepping-stone.ch
 #                    support@stepping-stone.ch
@@ -28,6 +28,9 @@ package Provisioning::Backend::LDAP;
 use strict;
 use warnings;
 
+use 5.10.1;
+no if $] >= 5.018, warnings => "experimental::smartmatch";
+
 use Provisioning::Log;
 use Provisioning::Information;
 use Module::Load;
@@ -43,7 +46,6 @@ use Net::LDAP::Constant qw(
   LDAP_SYNC_REFRESH_REQUIRED
   LDAP_USER_CANCELED
 );
-use Switch;
 use Net::LDAP::Control::SyncRequest;
 use POSIX;
 use File::Basename;
@@ -75,8 +77,6 @@ This module is responsible everything concerning the communication with the back
 =item Net::LDAP
 
 =item use Net::LDAP::Control::SyncRequest
-
-=item Switch
 
 =back
 
@@ -693,94 +693,99 @@ sub persistantSearchCallback{
     # if modus is ldap...we simply check the entys state...
     elsif($modus=~/ldap/i){
       # we simply check the entys state and perform the aproppriate action. 
-      switch($state) {
-        case LDAP_SYNC_PRESENT  { print "present\n"; } #TODO
-        case LDAP_SYNC_ADD      {
-                                    # Call the process entry method and pass the
-                                    # given entry and state "add"
-                                    logger("info","Adding entry: ".
-                                       $param2->dn() );
+      for ($state)
+      {
+        when (LDAP_SYNC_PRESENT) { print "present\n"; }; #TODO
+        when (LDAP_SYNC_ADD)
+        {
+          # Call the process entry method and pass the
+          # given entry and state "add"
+          logger("info","Adding entry: ".
+            $param2->dn() );
 
-                                    # Start the process by calling the 
-                                    # processEntry method
-                                    $had_error = processEntry($param2,
-                                                              "add",
-                                                              $state);
+          # Start the process by calling the
+          # processEntry method
+          $had_error = processEntry($param2,
+            "add",
+            $state);
 
-                                    # Check if the entry could be added without
-                                    # errors
-                                    if( $had_error == 0 )
-                                    {
-                                        logger("info","Successfully added ".
-                                               $param2->dn());
-                                    } else 
-                                    {
-                                        logger("error","Could not add ".
-                                               $param2->dn()." without errors,".
-                                               " return code: $had_error" );
-                                    }
+          # Check if the entry could be added without
+          # errors
+          if( $had_error == 0 )
+          {
+            logger("info","Successfully added ".
+              $param2->dn());
+          } else
+          {
+            logger("error","Could not add ".
+              $param2->dn()." without errors,".
+              " return code: $had_error" );
+          }
 
-                                }
-        case LDAP_SYNC_MODIFY   {
-                                    # Call the process entry method and pass the
-                                    # given entry and state "modify"
-                                    logger("info","Modifying entry: ".
-                                       $param2->dn() );
+        };
+        when (LDAP_SYNC_MODIFY)
+        {
+          # Call the process entry method and pass the
+          # given entry and state "modify"
+          logger("info","Modifying entry: ".
+            $param2->dn() );
 
-                                    # Start the process by calling the 
-                                    # processEntry method
-                                    $had_error = processEntry($param2,
-                                                              "modify",
-                                                              $state);
+          # Start the process by calling the
+          # processEntry method
+          $had_error = processEntry($param2,
+            "modify",
+            $state);
 
-                                    # Check if the entry could be added without
-                                    # errors
-                                    if( $had_error == 0 )
-                                    {
-                                        logger("info","Successfully modified ".
-                                               $param2->dn());
-                                    } else 
-                                    {
-                                        logger("error","Could not modify ".
-                                               $param2->dn()." without errors,".
-                                               " return code: $had_error" );
-                                    }
-                                }
-        case LDAP_SYNC_DELETE   {
-                                    # Call the process entry method and pass the
-                                    # given entry and state "add"
-                                    logger("info","Deleting entry: ".
-                                       $param2->dn() );
+          # Check if the entry could be added without
+          # errors
+          if( $had_error == 0 )
+          {
+            logger("info","Successfully modified ".
+              $param2->dn());
+          } else
+          {
+            logger("error","Could not modify ".
+              $param2->dn()." without errors,".
+              " return code: $had_error" );
+          }
+        };
+        when (LDAP_SYNC_DELETE)
+        {
+          # Call the process entry method and pass the
+          # given entry and state "add"
+          logger("info","Deleting entry: ".
+            $param2->dn() );
 
-                                    # Start the process by calling the 
-                                    # processEntry method
-                                    $had_error = processEntry($param2,
-                                                              "delete",
-                                                              $state);
+          # Start the process by calling the
+          # processEntry method
+          $had_error = processEntry($param2,
+            "delete",
+            $state);
 
-                                    # Check if the entry could be added without
-                                    # errors
-                                    if( $had_error == 0 )
-                                    {
-                                        logger("info","Successfully deleted ".
-                                               $param2->dn());
-                                    } else 
-                                    {
-                                        logger("error","Could not delete ".
-                                               $param2->dn()." without errors,".
-                                               " return code: $had_error" );
-                                    } 
-                                }
-        else                    {
-                                    # We don't know this state so just log it
-                                    logger("error","Received an entry ("
-                                          .$param2->dn().") in LDAP mode and "
-                                          ."state $state. This state is unknown"
-                                          ." so we cannot process this entry"
-                                          );
-                                }
+          # Check if the entry could be added without
+          # errors
+          if( $had_error == 0 )
+          {
+            logger("info","Successfully deleted ".
+              $param2->dn());
+          } else
+          {
+            logger("error","Could not delete ".
+              $param2->dn()." without errors,".
+              " return code: $had_error" );
+          }
+        };
+        default
+        {
+          # We don't know this state so just log it
+          logger("error","Received an entry ("
+            .$param2->dn().") in LDAP mode and "
+            ."state $state. This state is unknown"
+            ." so we cannot process this entry"
+          );
+        }
 
-      } # End of switch($state)
+      }
 
     } # end elsif($modus=~/ldap/i)
 

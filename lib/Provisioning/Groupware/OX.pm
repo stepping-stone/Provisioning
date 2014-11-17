@@ -1,6 +1,6 @@
 package Provisioning::Groupware::OX;
 
-# Copyright (C) 2012 stepping stone GmbH
+# Copyright (C) 2014 stepping stone GmbH
 #                    Switzerland
 #                    http://www.stepping-stone.ch
 #                    support@stepping-stone.ch
@@ -31,7 +31,6 @@ use strict;
 use Config::IniFiles;
 use Net::LDAP;
 use Net::LDAP::Util qw(ldap_explode_dn);
-use Switch;
 use Module::Load;
 
 use Provisioning::Log;
